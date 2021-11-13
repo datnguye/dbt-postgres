@@ -5,10 +5,7 @@
 
 # Getting ready?
 
-## Install the Microsoft ODBC driver for SQL Server (Linux only)
-[Here](https://docs.microsoft.com/en-us/sql/connect/odbc/linux-mac/installing-the-microsoft-odbc-driver-for-sql-server?view=sql-server-ver15)
-
-## Install dbt & the mssql plugin
+## Install dbt 
 Installed version: `dbt 0.20.2`
 
 - Windows:
