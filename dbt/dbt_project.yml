@@ -1,0 +1,116 @@
+
+# Name your project! Project names should contain only lowercase characters
+# and underscores. A good package name should reflect your organization's
+# name or the intended use of these models
+name: 'dbt_postgresql'
+version: '1.0.0'
+config-version: 2
+
+# This setting configures which "profile" dbt uses for this project.
+profile: 'dbt_postgresql'
+
+# These configurations specify where dbt should look for different types of files.
+# The `source-paths` config, for example, states that models in this project can be
+# found in the "models/" directory. You probably won't need to change these!
+source-paths: ["models"]
+analysis-paths: ["analysis"]
+test-paths: ["tests"]
+data-paths: ["data"]
+macro-paths: ["macros"]
+snapshot-paths: ["snapshots"]
+
+target-path: "target"  # directory which will store compiled SQL files
+clean-targets:         # directories to be removed by `dbt clean`
+    - "target"
+    - "dbt_modules"
+
+
+# Configuring models
+# Full documentation: https://docs.getdbt.com/docs/configuring-models
+
+# In this example config, we tell dbt to build all models in the example/ directory
+# as tables. These settings can be overridden in the individual model files
+# using the `{{ config(...) }}` macro.
+models:
+  dbt_postgresql:
+    +materialized: incremental
+    +incremental_strategy: merge
+          
+vars:
+  dbt_utils_dispatch_list: ['tsql_utils']
+  dbt_date_dispatch_list: ['tsql_utils']
+  audit_helper_dispatch_list: ['tsql_utils']
+  dbt_expectations_dispatch_list: ['tsql_utils']
+
+seeds:
+  dbt_postgresql:
+    covid:
+      covid_raw:
+        +enabled: true
+        +schema: staging
+        +alias: Covid_Raw
+        +full_refresh: true
+        +quote_columns: false
+        +column_types:
+            iso_code: varchar(255)
+            continent: varchar(255)
+            location: varchar(255)
+            last_updated_date: date
+            total_cases: varchar(255)
+            new_cases: varchar(255)
+            new_cases_smoothed: varchar(255)
+            total_deaths: varchar(255)
+            new_deaths: varchar(255)
+            new_deaths_smoothed: varchar(255)
+            total_cases_per_million: varchar(255)
+            new_cases_per_million: varchar(255)
+            new_cases_smoothed_per_million: varchar(255)
+            total_deaths_per_million: varchar(255)
+            new_deaths_per_million: varchar(255)
+            new_deaths_smoothed_per_million: varchar(255)
+            reproduction_rate: varchar(255)
+            icu_patients: varchar(255)
+            icu_patients_per_million: varchar(255)
+            hosp_patients: varchar(255)
+            hosp_patients_per_million: varchar(255)
+            weekly_icu_admissions: varchar(255)
+            weekly_icu_admissions_per_million: varchar(255)
+            weekly_hosp_admissions: varchar(255)
+            weekly_hosp_admissions_per_million: varchar(255)
+            new_tests: varchar(255)
+            total_tests: varchar(255)
+            total_tests_per_thousand: varchar(255)
+            new_tests_per_thousand: varchar(255)
+            new_tests_smoothed: varchar(255)
+            new_tests_smoothed_per_thousand: varchar(255)
+            positive_rate: varchar(255)
+            tests_per_case: varchar(255)
+            tests_units: varchar(255)
+            total_vaccinations: varchar(255)
+            people_vaccinated: varchar(255)
+            people_fully_vaccinated: varchar(255)
+            total_boosters: varchar(255)
+            new_vaccinations: varchar(255)
+            new_vaccinations_smoothed: varchar(255)
+            total_vaccinations_per_hundred: varchar(255)
+            people_vaccinated_per_hundred: varchar(255)
+            people_fully_vaccinated_per_hundred: varchar(255)
+            total_boosters_per_hundred: varchar(255)
+            new_vaccinations_smoothed_per_million: varchar(255)
+            stringency_index: varchar(255)
+            population: varchar(255)
+            population_density: varchar(255)
+            median_age: varchar(255)
+            aged_65_older: varchar(255)
+            aged_70_older: varchar(255)
+            gdp_per_capita: varchar(255)
+            extreme_poverty: varchar(255)
+            cardiovasc_death_rate: varchar(255)
+            diabetes_prevalence: varchar(255)
+            female_smokers: varchar(255)
+            male_smokers: varchar(255)
+            handwashing_facilities: varchar(255)
+            hospital_beds_per_thousand: varchar(255)
+            life_expectancy: varchar(255)
+            human_development_index: varchar(255)
+            excess_mortality: varchar(255)

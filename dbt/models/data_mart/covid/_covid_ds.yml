@@ -1,0 +1,16 @@
+version: 2
+
+exposures:
+  - name: _covid_ds
+    type: dashboard
+    description: >
+      All `Covid` dataset's tables
+    
+    depends_on:
+      - ref('Country')
+      - ref('Date')
+      - ref('CovidCase')
+
+    owner:
+      name: covid
+      email: datnguyen.it09@gmail.com

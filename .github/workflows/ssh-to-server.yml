@@ -1,0 +1,101 @@
+name: SSH deployment
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+    
+
+env:
+  service_name: awesomedbt
+  service_port: 6000
+  nginx_site_path: ${{ secrets.NGINX_SITE_PATH }}/awesomedbt.${{ secrets.DOMAIN }}
+  nginx_unit_path: ${{ secrets.NGINX_UNIT_PATH }}/awesomedbt.service
+  
+
+jobs:
+  # build_and_dbt_test:
+  #   runs-on: ubuntu-20.04
+  #   steps:
+  #     - 
+
+
+  # build_and_service_test:
+  #   runs-on: ubuntu-20.04
+  #   steps:
+  #     - 
+      
+      
+  ssh_publish:
+    runs-on: ubuntu-20.04
+    # conditiom: 
+    steps:
+      - name: checkout
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          passphrase: ${{ secrets.SSH_PASSPHRASE }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            mv dbt-postgres dbt-postgres-$(date +%s) > /dev/null
+            git clone https://${{ secrets.GIHUB_ACTION_USER }}:${{ secrets.GIHUB_ACTION_TOKEN }}@github.com/datnguye/dbt-postgres.git
+
+      - name: install dependencies
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          passphrase: ${{ secrets.SSH_PASSPHRASE }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /root/dbt-postgres
+            python -m pip install --upgrade pip==21.2.4
+            python -m pip install -r requirements.txt --ignore-installed PyYAML
+
+      - name: make service files
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          passphrase: ${{ secrets.SSH_PASSPHRASE }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            echo "[Unit]"                                                             >  ${{ env.nginx_unit_path }}
+            echo "Description=awesome dbt service"                                    >> ${{ env.nginx_unit_path }}
+            echo "After=multi-user.target"                                            >> ${{ env.nginx_unit_path }}
+            echo "[Service]"                                                          >> ${{ env.nginx_unit_path }}
+            echo "User=root"                                                          >> ${{ env.nginx_unit_path }}
+            echo "EnvironmentFile=${{ secrets.AWESOME_DBT_ENV_FILE }}"                >> ${{ env.nginx_unit_path }}
+            echo "ExecStart=/usr/bin/python -m uvicorn main:app --host 0.0.0.0 --port ${{ env.service_port }} --app-dir \"/root/dbt-postgres/services/api_service\"" >> ${{ env.nginx_unit_path }}
+            echo "[Install]"                                                          >> ${{ env.nginx_unit_path }}
+            echo "WantedBy=multi-user.target"                                         >> ${{ env.nginx_unit_path }}
+            #
+            echo "server {"                                                           >  ${{ env.nginx_site_path }}
+            echo "  server_name ${{ env.service_name }}.${{ secrets.DOMAIN }};"       >> ${{ env.nginx_site_path }}
+            echo "  location / {"                                                     >> ${{ env.nginx_site_path }}
+            echo "    proxy_pass http://127.0.0.1:${{env.service_port}};"             >> ${{ env.nginx_site_path }}
+            echo "    proxy_set_header Host \$host;"                                  >> ${{ env.nginx_site_path }}
+            echo "    proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;"  >> ${{ env.nginx_site_path }}
+            echo "    proxy_set_header X-Forwarded-Proto \$scheme;"                   >> ${{ env.nginx_site_path }}
+            echo "  }"                                                                >> ${{ env.nginx_site_path }}
+            echo "}"                                                                  >> ${{ env.nginx_site_path }}
+            #
+            certbot --nginx -d ${{ env.service_name }}.${{ secrets.DOMAIN }} --non-interactive --agree-tos -m datnguyen.it09@gmail.com
+
+      - name: start service
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          passphrase: ${{ secrets.SSH_PASSPHRASE }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            echo "env_postgres_user_secret=${{ secrets.DBT_USER }}"                   >   ${{ secrets.AWESOME_DBT_ENV_FILE }}
+            echo "env_postgres_password_secret=${{ secrets.DBT_PASSWORD }}"           >>  ${{ secrets.AWESOME_DBT_ENV_FILE }}
+            echo "env_postgres_host_secret=${{ secrets.DBT_HOST }}"                   >>  ${{ secrets.AWESOME_DBT_ENV_FILE }}
+            systemctl enable ${{ env.service_name }}.service
+            systemctl daemon-reload
+            systemctl restart ${{ env.service_name }}.service
+            systemctl status ${{ env.service_name }}.service

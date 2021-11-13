@@ -1,0 +1,15 @@
+version: 2
+
+models:
+  - name: Date
+    description: "covid - Date model"
+    columns:
+      - name: '"DateKey"'
+        description: "The primary key for this table"
+        tests:
+          - unique
+          - not_null
+      - name: '"Date Value"'
+        tests:
+          - unique
+          - not_null

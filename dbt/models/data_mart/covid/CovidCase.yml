@@ -1,0 +1,23 @@
+version: 2
+
+models:
+  - name: CovidCase
+    description: "covid - CovidCase model"
+    columns:
+      - name: '"CovidCaseKey"'
+        description: "The primary key for this table"
+        tests:
+          - unique
+          - not_null
+      - name: '"CountryKey"'
+        tests:
+          - relationship_where:
+              to: ref('Country')
+              field: '"CountryKey"'
+              from_condition: 1=1
+      - name: '"DateKey"'
+        tests:
+          - relationship_where:
+              to: ref('Date')
+              field: '"DateKey"'
+              from_condition: 1=1

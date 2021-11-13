@@ -1,0 +1,22 @@
+version: 2
+
+models:
+  - name: Country
+    description: "covid - Country model"
+    tests:
+      - unique_combination_of_columns:
+          combination_of_columns:
+            - '"Continent"'
+            - '"Country"'
+    columns:
+      - name: '"CountryKey"'
+        description: "The primary key for this table"
+        tests:
+          - unique
+          - not_null
+      - name: '"Continent"'
+        tests:
+          - not_null
+      - name: '"Country"'
+        tests:
+          - not_null
