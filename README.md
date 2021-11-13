@@ -1,5 +1,5 @@
 # dbt-postgres
-This is where to start the data transformation with dbt and SQL Server.
+This is where to start the data transformation with dbt and PostgreSQL.
 > Sample data mart: `covid`
 
 > Start your local development with `.\env\Scripts\activate`. For more details: [LOCALDEV.md](LOCALDEV.md)
