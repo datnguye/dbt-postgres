@@ -8,7 +8,7 @@ on:
     
 
 env:
-  project_name: power-anly
+  project_name: dbt-postgres
   service_name: awesomedbt
   service_port: 6000
   nginx_site_path: ${{ secrets.NGINX_SITE_PATH }}/awesomedbt.${{ secrets.DOMAIN }}
