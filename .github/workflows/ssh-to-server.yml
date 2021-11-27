@@ -8,6 +8,7 @@ on:
     
 
 env:
+  project_name: dbt-postgres
   service_name: awesomedbt
   service_port: 6000
   nginx_site_path: ${{ secrets.NGINX_SITE_PATH }}/awesomedbt.${{ secrets.DOMAIN }}
@@ -39,8 +40,9 @@ jobs:
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            mv dbt-postgres dbt-postgres-$(date +%s) > /dev/null
-            git clone https://${{ secrets.GIHUB_ACTION_USER }}:${{ secrets.GIHUB_ACTION_TOKEN }}@github.com/datnguye/dbt-postgres.git
+            mkdir archive
+            mv ${{ env.project_name }} /archive/${{ env.project_name }}-$(date +%s) > /dev/null
+            git clone https://${{ secrets.GIHUB_ACTION_USER }}:${{ secrets.GIHUB_ACTION_TOKEN }}@github.com/datnguye/${{ env.project_name }}.git
 
       - name: install dependencies
         uses: appleboy/ssh-action@master
@@ -50,7 +52,10 @@ jobs:
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            cd /root/dbt-postgres
+            cd /root/${{ env.project_name }}
+            python -m pip install virtualenv
+            python -m venv venv            
+            . venv/bin/activate
             python -m pip install --upgrade pip==21.2.4
             python -m pip install -r requirements.txt --ignore-installed PyYAML
 
@@ -61,14 +66,18 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
+          script: |          
             echo "[Unit]"                                                             >  ${{ env.nginx_unit_path }}
-            echo "Description=awesome dbt service"                                    >> ${{ env.nginx_unit_path }}
+            echo "Description=${{ env.project_name }} service"                        >> ${{ env.nginx_unit_path }}
             echo "After=multi-user.target"                                            >> ${{ env.nginx_unit_path }}
             echo "[Service]"                                                          >> ${{ env.nginx_unit_path }}
-            echo "User=root"                                                          >> ${{ env.nginx_unit_path }}
+            echo "Type=simple"                                                        >> ${{ env.nginx_unit_path }}
+            echo "Restart=always"                                                     >> ${{ env.nginx_unit_path }}
+            echo "WorkingDirectory=/root/${{ env.project_name }}"                     >> ${{ env.nginx_unit_path }}
+            echo "VIRTUAL_ENV=/root/${{ env.project_name }}/venv"                     >> ${{ env.nginx_unit_path }}
+            echo "Enviroment=PATH=\$VIRTUAL_ENV/bin:\$PATH"                           >> ${{ env.nginx_unit_path }}
             echo "EnvironmentFile=${{ secrets.AWESOME_DBT_ENV_FILE }}"                >> ${{ env.nginx_unit_path }}
-            echo "ExecStart=/usr/bin/python -m uvicorn main:app --host 0.0.0.0 --port ${{ env.service_port }} --app-dir \"/root/dbt-postgres/services/api_service\"" >> ${{ env.nginx_unit_path }}
+            echo "ExecStart=/root/${{ env.project_name }}/venv/bin/python -m uvicorn main:app --host 0.0.0.0 --port ${{ env.service_port }} --app-dir \"/root/${{ env.project_name }}/services/api_service\"" >> ${{ env.nginx_unit_path }}
             echo "[Install]"                                                          >> ${{ env.nginx_unit_path }}
             echo "WantedBy=multi-user.target"                                         >> ${{ env.nginx_unit_path }}
             #
