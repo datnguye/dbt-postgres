@@ -40,8 +40,8 @@ jobs:
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            mkdir archive
-            mv ${{ env.project_name }} /archive/${{ env.project_name }}-$(date +%s) > /dev/null
+            mkdir /root/archive
+            mv ${{ env.project_name }} /root/archive/${{ env.project_name }}-$(date +%s) > /dev/null
             git clone https://${{ secrets.GIHUB_ACTION_USER }}:${{ secrets.GIHUB_ACTION_TOKEN }}@github.com/datnguye/${{ env.project_name }}.git
 
       - name: install dependencies
