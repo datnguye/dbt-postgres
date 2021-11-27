@@ -76,7 +76,7 @@ jobs:
           ssh-username: ${{ secrets.SSH_USER }}
           ssh-passphrase: ${{ secrets.SSH_PASSPHRASE }}
           ssh-key: ${{ secrets.SSH_PRIVATE_KEY }}
-          unit-service-name: ${{ secrets.NGINX_SERVICE_NAME }}
+          unit-service-name: ${{ env.service_name }}
           unit-service-env-file: ${{ secrets.AWESOME_DBT_ENV_FILE }}
           dbt-host: ${{ secrets.DBT_HOST }}
           dbt-user: ${{ secrets.DBT_USER }}
