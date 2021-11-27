@@ -1,0 +1,30 @@
+name: 'checkout repo'
+inputs:
+  project-name:
+    required: true
+  ssh-host:
+    required: true
+  ssh-username:
+    required: true
+  ssh-passphrase:
+    required: true
+  ssh-key:
+    required: true
+  git-user:
+    required: true
+  git-token:
+    required: true
+runs:
+  using: "composite"
+  steps:
+    - name: checkout
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ inputs.ssh-host }}
+        username: ${{ inputs.ssh-username }}
+        passphrase: ${{ inputs.ssh-passphrase }}
+        key: ${{ inputs.ssh-key }}
+        script: |
+          mkdir /root/archive > /dev/null
+          mv ${{ inputs.project-name }} /root/archive/${{ inputs.project-name }}-$(date +%s) > /dev/null
+          git clone https://${{ inputs.git-user }}:${{ inputs.git-token }}@github.com/datnguye/${{ inputs.project-name }}.git

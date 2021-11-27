@@ -1,0 +1,41 @@
+name: 'start unit service'
+inputs:
+  project-name:
+    required: true
+  ssh-host:
+    required: true
+  ssh-username:
+    required: true
+  ssh-passphrase:
+    required: true
+  ssh-key:
+    required: true
+  unit-service-name:
+    required: true
+    default: myservice
+  unit-service-env-file:
+    required: true
+  dbt-host:
+    required: true
+  dbt-user:
+    required: true
+  dbt-password:
+    required: true
+runs:
+  using: "composite"
+  steps:
+    - name: checkout
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ inputs.ssh-host }}
+        username: ${{ inputs.ssh-username }}
+        passphrase: ${{ inputs.ssh-passphrase }}
+        key: ${{ inputs.ssh-key }}
+        script: |
+          echo "env_postgres_user_secret=${{ inputs.dbt-user }}"                   >   ${{ inputs.unit-service-env-file }}
+          echo "env_postgres_password_secret=${{ inputs.dbt-password }}"           >>  ${{ inputs.unit-service-env-file }}
+          echo "env_postgres_host_secret=${{ inputs.dbt-host }}"                   >>  ${{ inputs.unit-service-env-file }}
+          systemctl enable ${{ inputs.unit-service-name }}.service
+          systemctl daemon-reload
+          systemctl restart ${{ inputs.unit-service-name }}.service
+          # systemctl status ${{ inputs.unit-service-name }}.service

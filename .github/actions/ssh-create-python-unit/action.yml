@@ -1,0 +1,63 @@
+name: 'create python unit service file(s)'
+inputs:
+  project-name:
+    required: true
+  ssh-host:
+    required: true
+  ssh-username:
+    required: true
+  ssh-passphrase:
+    required: true
+  ssh-key:
+    required: true
+  unit-service-path:
+    required: true
+    default: /etc/systemd/system/myservice.service
+  unit-service-exec:
+    required: true
+  unit-service-port:
+    required: true
+  unit-site-path:
+    required: true
+    default: /etc/nginx/sites-enabled/myservice.domain.com
+  unit-site-domain:
+    required: true
+    default: domain.com
+  ssl-report-to:
+    required: true
+    default: datnguyen.it09@gmail.com
+runs:
+  using: "composite"
+  steps:
+    - name: checkout
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ inputs.ssh-host }}
+        username: ${{ inputs.ssh-username }}
+        passphrase: ${{ inputs.ssh-passphrase }}
+        key: ${{ inputs.ssh-key }}
+        script: |
+          echo "[Unit]"                                                             >  ${{ inputs.unit-service-path }}
+          echo "Description=${{ inputs.unit-site-domain }} service"                 >> ${{ inputs.unit-service-path }}
+          echo "After=multi-user.target"                                            >> ${{ inputs.unit-service-path }}
+          echo "[Service]"                                                          >> ${{ inputs.unit-service-path }}
+          echo "Type=simple"                                                        >> ${{ inputs.unit-service-path }}
+          echo "Restart=always"                                                     >> ${{ inputs.unit-service-path }}
+          echo "WorkingDirectory=/root/${{ inputs.project-name }}"                  >> ${{ inputs.unit-service-path }}
+          echo "VIRTUAL_ENV=/root/${{ inputs.project-name }}/venv"                  >> ${{ inputs.unit-service-path }}
+          echo "Enviroment=PATH=\$VIRTUAL_ENV/bin:\$PATH"                           >> ${{ inputs.unit-service-path }}
+          echo "ExecStart=/root/${{ inputs.project-name }}/venv/bin/python -m  ${{ inputs.unit-service-exec }} >> ${{ inputs.unit-service-path }}
+          echo "[Install]"                                                          >> ${{ inputs.unit-service-path }}
+          echo "WantedBy=multi-user.target"                                         >> ${{ inputs.unit-service-path }}
+          #
+          echo "server {"                                                           >  ${{ inputs.unit-site-path }}
+          echo "  server_name ${{ inputs.unit-site-domain }};"                      >> ${{ inputs.unit-site-path }}
+          echo "  location / {"                                                     >> ${{ inputs.unit-site-path }}
+          echo "    proxy_pass http://127.0.0.1:${{inputs.unit-service-port}};"     >> ${{ inputs.unit-site-path }}
+          echo "    proxy_set_header Host \$host;"                                  >> ${{ inputs.unit-site-path }}
+          echo "    proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;"  >> ${{ inputs.unit-site-path }}
+          echo "    proxy_set_header X-Forwarded-Proto \$scheme;"                   >> ${{ inputs.unit-site-path }}
+          echo "  }"                                                                >> ${{ inputs.unit-site-path }}
+          echo "}"                                                                  >> ${{ inputs.unit-site-path }}
+          #
+          certbot --nginx -d ${{ inputs.unit-site-domain }} --non-interactive --agree-tos -m ${{ inputs.ssl-report-to }}

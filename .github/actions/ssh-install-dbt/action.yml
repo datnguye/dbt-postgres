@@ -1,0 +1,29 @@
+name: 'install service'
+inputs:
+  project-name:
+    required: true
+  ssh-host:
+    required: true
+  ssh-username:
+    required: true
+  ssh-passphrase:
+    required: true
+  ssh-key:
+    required: true
+runs:
+  using: "composite"
+  steps:
+    - name: checkout
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ inputs.ssh-host }}
+        username: ${{ inputs.ssh-username }}
+        passphrase: ${{ inputs.ssh-passphrase }}
+        key: ${{ inputs.ssh-key }}
+        script: |
+          cd /root/${{ inputs.project-name }}
+          python -m pip install virtualenv
+          python -m venv venv            
+          . venv/bin/activate
+          python -m pip install --upgrade pip==21.2.4
+          python -m pip install -r requirements.txt --ignore-installed PyYAML

@@ -8,7 +8,7 @@ on:
     
 
 env:
-  project_name: dbt-postgres
+  project_name: power-anly
   service_name: awesomedbt
   service_port: 6000
   nginx_site_path: ${{ secrets.NGINX_SITE_PATH }}/awesomedbt.${{ secrets.DOMAIN }}
@@ -32,79 +32,52 @@ jobs:
     runs-on: ubuntu-20.04
     # conditiom: 
     steps:
-      - name: checkout
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          passphrase: ${{ secrets.SSH_PASSPHRASE }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            mkdir /root/archive
-            mv ${{ env.project_name }} /root/archive/${{ env.project_name }}-$(date +%s) > /dev/null
-            git clone https://${{ secrets.GIHUB_ACTION_USER }}:${{ secrets.GIHUB_ACTION_TOKEN }}@github.com/datnguye/${{ env.project_name }}.git
+      - uses: actions/checkout@v1
 
-      - name: install dependencies
-        uses: appleboy/ssh-action@master
+      - name: Run ssh checkout
+        uses: ./.github/actions/ssh-checkout
         with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          passphrase: ${{ secrets.SSH_PASSPHRASE }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            cd /root/${{ env.project_name }}
-            python -m pip install virtualenv
-            python -m venv venv            
-            . venv/bin/activate
-            python -m pip install --upgrade pip==21.2.4
-            python -m pip install -r requirements.txt --ignore-installed PyYAML
+          project-name: ${{ env.project_name }}
+          ssh-host: ${{ secrets.SSH_HOST }}
+          ssh-username: ${{ secrets.SSH_USER }}
+          ssh-passphrase: ${{ secrets.SSH_PASSPHRASE }}
+          ssh-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          git-user: ${{ secrets.GIHUB_ACTION_USER }}
+          git-token: ${{ secrets.GIHUB_ACTION_TOKEN }}
 
-      - name: make service files
-        uses: appleboy/ssh-action@master
+      - name: Run install dbt
+        uses: ./.github/actions/ssh-install-dbt
         with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          passphrase: ${{ secrets.SSH_PASSPHRASE }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |          
-            echo "[Unit]"                                                             >  ${{ env.nginx_unit_path }}
-            echo "Description=${{ env.project_name }} service"                        >> ${{ env.nginx_unit_path }}
-            echo "After=multi-user.target"                                            >> ${{ env.nginx_unit_path }}
-            echo "[Service]"                                                          >> ${{ env.nginx_unit_path }}
-            echo "Type=simple"                                                        >> ${{ env.nginx_unit_path }}
-            echo "Restart=always"                                                     >> ${{ env.nginx_unit_path }}
-            echo "WorkingDirectory=/root/${{ env.project_name }}"                     >> ${{ env.nginx_unit_path }}
-            echo "VIRTUAL_ENV=/root/${{ env.project_name }}/venv"                     >> ${{ env.nginx_unit_path }}
-            echo "Enviroment=PATH=\$VIRTUAL_ENV/bin:\$PATH"                           >> ${{ env.nginx_unit_path }}
-            echo "EnvironmentFile=${{ secrets.AWESOME_DBT_ENV_FILE }}"                >> ${{ env.nginx_unit_path }}
-            echo "ExecStart=/root/${{ env.project_name }}/venv/bin/python -m uvicorn main:app --host 0.0.0.0 --port ${{ env.service_port }} --app-dir \"/root/${{ env.project_name }}/services/api_service\"" >> ${{ env.nginx_unit_path }}
-            echo "[Install]"                                                          >> ${{ env.nginx_unit_path }}
-            echo "WantedBy=multi-user.target"                                         >> ${{ env.nginx_unit_path }}
-            #
-            echo "server {"                                                           >  ${{ env.nginx_site_path }}
-            echo "  server_name ${{ env.service_name }}.${{ secrets.DOMAIN }};"       >> ${{ env.nginx_site_path }}
-            echo "  location / {"                                                     >> ${{ env.nginx_site_path }}
-            echo "    proxy_pass http://127.0.0.1:${{env.service_port}};"             >> ${{ env.nginx_site_path }}
-            echo "    proxy_set_header Host \$host;"                                  >> ${{ env.nginx_site_path }}
-            echo "    proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;"  >> ${{ env.nginx_site_path }}
-            echo "    proxy_set_header X-Forwarded-Proto \$scheme;"                   >> ${{ env.nginx_site_path }}
-            echo "  }"                                                                >> ${{ env.nginx_site_path }}
-            echo "}"                                                                  >> ${{ env.nginx_site_path }}
-            #
-            certbot --nginx -d ${{ env.service_name }}.${{ secrets.DOMAIN }} --non-interactive --agree-tos -m datnguyen.it09@gmail.com
+          project-name: ${{ env.project_name }}
+          ssh-host: ${{ secrets.SSH_HOST }}
+          ssh-username: ${{ secrets.SSH_USER }}
+          ssh-passphrase: ${{ secrets.SSH_PASSPHRASE }}
+          ssh-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-      - name: start service
-        uses: appleboy/ssh-action@master
+      - name: Run create service unit files
+        uses: ./.github/actions/ssh-create-python-unit
         with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          passphrase: ${{ secrets.SSH_PASSPHRASE }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            echo "env_postgres_user_secret=${{ secrets.DBT_USER }}"                   >   ${{ secrets.AWESOME_DBT_ENV_FILE }}
-            echo "env_postgres_password_secret=${{ secrets.DBT_PASSWORD }}"           >>  ${{ secrets.AWESOME_DBT_ENV_FILE }}
-            echo "env_postgres_host_secret=${{ secrets.DBT_HOST }}"                   >>  ${{ secrets.AWESOME_DBT_ENV_FILE }}
-            systemctl enable ${{ env.service_name }}.service
-            systemctl daemon-reload
-            systemctl restart ${{ env.service_name }}.service
-            systemctl status ${{ env.service_name }}.service
+          project-name: ${{ env.project_name }}
+          ssh-host: ${{ secrets.SSH_HOST }}
+          ssh-username: ${{ secrets.SSH_USER }}
+          ssh-passphrase: ${{ secrets.SSH_PASSPHRASE }}
+          ssh-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          unit-service-path: ${{ env.nginx_unit_path }}
+          unit-service-exec: uvicorn main:app --host 0.0.0.0 --port ${{ env.service_port }} --app-dir "/root/${{ env.project_name }}/services/api_service"
+          unit-service-port: ${{ env.service_port }}
+          unit-site-path: ${{ env.nginx_site_path }}
+          unit-site-domain: ${{ env.service_name }}.${{ secrets.DOMAIN }}
+
+      - name: Run start service
+        uses: ./.github/actions/ssh-start-service
+        with:
+          project-name: ${{ env.project_name }}
+          ssh-host: ${{ secrets.SSH_HOST }}
+          ssh-username: ${{ secrets.SSH_USER }}
+          ssh-passphrase: ${{ secrets.SSH_PASSPHRASE }}
+          ssh-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          unit-service-name: ${{ secrets.NGINX_SERVICE_NAME }}
+          unit-service-env-file: ${{ secrets.AWESOME_DBT_ENV_FILE }}
+          dbt-host: ${{ secrets.DBT_HOST }}
+          dbt-user: ${{ secrets.DBT_USER }}
+          dbt-password: ${{ secrets.DBT_PASSWORD }}
