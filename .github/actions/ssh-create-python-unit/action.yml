@@ -46,7 +46,7 @@ runs:
           echo "WorkingDirectory=/root/${{ inputs.project-name }}"                  >> ${{ inputs.unit-service-path }}
           echo "VIRTUAL_ENV=/root/${{ inputs.project-name }}/venv"                  >> ${{ inputs.unit-service-path }}
           echo "Enviroment=PATH=\$VIRTUAL_ENV/bin:\$PATH"                           >> ${{ inputs.unit-service-path }}
-          echo "ExecStart=/root/${{ inputs.project-name }}/venv/bin/python -m  ${{ inputs.unit-service-exec }} >> ${{ inputs.unit-service-path }}
+          echo "ExecStart=/root/${{ inputs.project-name }}/venv/bin/python -m  ${{ inputs.unit-service-exec }}" >> ${{ inputs.unit-service-path }}
           echo "[Install]"                                                          >> ${{ inputs.unit-service-path }}
           echo "WantedBy=multi-user.target"                                         >> ${{ inputs.unit-service-path }}
           #

@@ -63,7 +63,7 @@ jobs:
           ssh-passphrase: ${{ secrets.SSH_PASSPHRASE }}
           ssh-key: ${{ secrets.SSH_PRIVATE_KEY }}
           unit-service-path: ${{ env.nginx_unit_path }}
-          unit-service-exec: uvicorn main:app --host 0.0.0.0 --port ${{ env.service_port }} --app-dir "/root/${{ env.project_name }}/services/api_service"
+          unit-service-exec: uvicorn main:app --host 0.0.0.0 --port ${{ env.service_port }} --app-dir \"/root/${{ env.project_name }}/services/api_service\"
           unit-service-port: ${{ env.service_port }}
           unit-site-path: ${{ env.nginx_site_path }}
           unit-site-domain: ${{ env.service_name }}.${{ secrets.DOMAIN }}
